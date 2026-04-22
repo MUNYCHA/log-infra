@@ -1,6 +1,8 @@
 services:
   nginx:
-    image: nginx:alpine
+    build:
+      context: ../log-dashboard-ui
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     volumes:
