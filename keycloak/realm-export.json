@@ -1,0 +1,42 @@
+{
+  "realm": "logstream",
+  "enabled": true,
+  "displayName": "LogStream",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "viewer",
+        "description": "Can view and stream logs"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "logstream-ui",
+      "name": "LogStream UI",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocol": "openid-connect"
+    }
+  ],
+  "scopeMappings": [],
+  "internationalizationEnabled": false,
+  "defaultSignatureAlgorithm": "RS256",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000
+}
