@@ -12,8 +12,8 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak:/opt/keycloak/data/import:ro
-    expose:
-      - "8080"
+    ports:
+      - "9090:8080"
     restart: unless-stopped
     logging:
       driver: json-file
