@@ -1,9 +1,26 @@
 /*
- * Logstream login theme — mirrors the dashboard look (src/constants/theme.js).
- * Self-contained: own class names (ls-*), no PatternFly dependency, so it is
- * stable across Keycloak versions. Light/dark follow prefers-color-scheme.
+ * Logstream login theme — Material Design 3 inspired.
+ * Two-column layout on the login page (aurora hero + sign-in card); other auth
+ * pages reuse the centered .ls-card. Own class names (ls-*), no PatternFly, so
+ * it is stable across Keycloak versions. Light-first with a dark fallback.
  */
 
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(./assets/fonts/DMSans-latin-500.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2212;
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(./assets/fonts/DMSans-latin-700.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2212;
+}
 @font-face {
   font-family: "Roboto";
   font-style: normal;
@@ -22,49 +39,52 @@
 }
 
 :root {
+  --ls-primary: #1a73e8;
+  --ls-primary-hover: #1765cc;
+  --ls-secondary: #0f9d58;
+  --ls-surface: #ffffff;
   --ls-bg: #f1f3f4;
-  --ls-card: #ffffff;
-  --ls-card-border: #e3e7eb;
-  --ls-card-shadow: 0 1px 3px rgba(60, 64, 67, 0.12), 0 10px 24px rgba(60, 64, 67, 0.12);
+  --ls-pane-bg: #f8f9fa;
   --ls-text: #202124;
-  --ls-text-secondary: #3c4043;
-  --ls-text-muted: #5f6368;
-  --ls-input-bg: #f1f3f4;
-  --ls-input-border: #dadce0;
-  --ls-input-placeholder: #5f6368;
-  --ls-accent: #1a73e8;
-  --ls-accent-hover: #1557b0;
-  --ls-accent-on: #ffffff;
-  --ls-focus-ring: rgba(26, 115, 232, 0.2);
+  --ls-text-secondary: #5f6368;
+  --ls-border: #dadce0;
+  --ls-input-bg: #ffffff;
   --ls-error: #d93025;
-  --ls-error-bg: #fce8e6;
-  --ls-success: #188038;
-  --ls-success-bg: #e6f4ea;
+  --ls-focus-ring: rgba(26, 115, 232, 0.18);
+  --ls-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  --ls-card-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.14);
+  --ls-heading-font: "DM Sans", "Roboto", "Segoe UI", Arial, sans-serif;
+  --ls-body-font: "Roboto", "Segoe UI", Arial, sans-serif;
+  /* aurora blob colors */
+  --ls-aurora-1: #1a73e8;
+  --ls-aurora-2: #0f9d58;
+  --ls-aurora-3: #202124;
+  --ls-hero-text: #ffffff;
+  --ls-hero-text-dim: rgba(255, 255, 255, 0.72);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --ls-primary: #8ab4f8;
+    --ls-primary-hover: #aecbfa;
+    --ls-secondary: #81c995;
+    --ls-surface: #202124;
     --ls-bg: #0f0f0f;
-    --ls-card: #202124;
-    --ls-card-border: #353941;
-    --ls-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.52), 0 14px 32px rgba(0, 0, 0, 0.3);
+    --ls-pane-bg: #0f0f0f;
     --ls-text: #e8eaed;
-    --ls-text-secondary: #bdc1c6;
-    --ls-text-muted: #80868b;
-    --ls-input-bg: #303134;
-    --ls-input-border: #5f6368;
-    --ls-input-placeholder: #80868b;
-    --ls-accent: #8ab4f8;
-    --ls-accent-hover: #669df6;
-    --ls-accent-on: #071435;
-    --ls-focus-ring: rgba(138, 180, 248, 0.25);
+    --ls-text-secondary: #9aa0a6;
+    --ls-border: #5f6368;
+    --ls-input-bg: #2a2b2e;
     --ls-error: #f28b82;
-    --ls-error-bg: rgba(217, 48, 37, 0.18);
-    --ls-success: #81c995;
-    --ls-success-bg: rgba(24, 128, 56, 0.18);
+    --ls-focus-ring: rgba(138, 180, 248, 0.25);
+    --ls-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 14px 32px rgba(0, 0, 0, 0.4);
+    --ls-card-shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.6), 0 18px 40px rgba(0, 0, 0, 0.5);
   }
 }
 
+* {
+  box-sizing: border-box;
+}
 html.ls-html {
   height: 100%;
 }
@@ -73,57 +93,203 @@ body.ls-body {
   min-height: 100%;
   background: var(--ls-bg);
   color: var(--ls-text);
-  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+  font-family: var(--ls-body-font);
   letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.ls-page {
+/* ============================================================
+   Two-column login layout
+   ============================================================ */
+.ls-split {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 45% 55%;
 }
 
-.ls-brand {
+/* ---- left: aurora hero ---- */
+.ls-hero {
+  position: relative;
+  overflow: hidden;
+  background: #0b1220;
+  color: var(--ls-hero-text);
+  padding: 56px 56px 32px;
+  display: flex;
+  flex-direction: column;
+}
+.ls-hero-aurora,
+.ls-hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ls-hero-aurora {
+  filter: blur(80px);
+  opacity: 0.6;
+}
+.ls-hero-aurora span {
+  position: absolute;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+}
+.ls-hero-aurora span:nth-child(1) {
+  background: var(--ls-aurora-1);
+  top: -80px;
+  left: -60px;
+}
+.ls-hero-aurora span:nth-child(2) {
+  background: var(--ls-aurora-2);
+  bottom: -120px;
+  left: 30%;
+}
+.ls-hero-aurora span:nth-child(3) {
+  background: var(--ls-aurora-3);
+  top: 20%;
+  right: -120px;
+}
+.ls-hero-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.5;
+}
+.ls-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ls-hero-brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
 }
-.ls-brand-logo {
-  width: 36px;
-  height: 36px;
+.ls-hero-brand img {
+  width: 34px;
+  height: 34px;
 }
-.ls-brand-name {
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--ls-text);
-  letter-spacing: -0.01em;
+.ls-hero-brand span {
+  font-family: var(--ls-heading-font);
+  font-weight: 700;
+  font-size: 20px;
+}
+.ls-hero-body {
+  margin-top: auto;
+  margin-bottom: auto;
+  max-width: 480px;
+}
+.ls-hero-headline {
+  font-family: var(--ls-heading-font);
+  font-weight: 700;
+  font-size: clamp(30px, 3.4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+}
+.ls-hero-subtitle {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ls-hero-text-dim);
+  margin: 0 0 32px;
+  max-width: 420px;
+}
+.ls-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ls-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14.5px;
+  color: rgba(255, 255, 255, 0.92);
+}
+.ls-feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.ls-feature-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.ls-hero-footer {
+  font-size: 12px;
+  color: var(--ls-hero-text-dim);
+}
+.ls-hero-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+.ls-hero-footer a:hover {
+  text-decoration: underline;
 }
 
+/* ---- right: sign-in pane ---- */
+.ls-pane {
+  background: var(--ls-pane-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+/* ============================================================
+   Card (shared: right pane + standalone centered pages)
+   ============================================================ */
+.ls-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--ls-bg);
+}
 .ls-card {
   width: 100%;
-  max-width: 400px;
-  background: var(--ls-card);
-  border: 1px solid var(--ls-card-border);
+  max-width: 420px;
+  background: var(--ls-surface);
+  border: 1px solid var(--ls-border);
   border-radius: 16px;
   box-shadow: var(--ls-card-shadow);
-  padding: 32px;
-  box-sizing: border-box;
+  padding: 36px 36px 30px;
+}
+.ls-card-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.ls-card-icon img {
+  width: 40px;
+  height: 40px;
 }
 
 .ls-title {
-  margin: 0 0 24px;
-  font-size: 18px;
+  font-family: var(--ls-heading-font);
   font-weight: 500;
+  font-size: 24px;
   color: var(--ls-text);
+  margin: 0;
+  text-align: center;
+}
+.ls-subtitle {
+  font-size: 14px;
+  color: var(--ls-text-secondary);
+  text-align: center;
+  margin: 4px 0 26px;
 }
 
+/* ---- form ---- */
 .ls-form-group {
   margin-bottom: 18px;
 }
@@ -136,22 +302,23 @@ body.ls-body {
 }
 .ls-input {
   width: 100%;
-  box-sizing: border-box;
-  padding: 11px 13px;
-  font-size: 14px;
-  font-family: inherit;
+  height: 48px;
+  padding: 0 14px;
+  font-size: 16px;
+  font-family: var(--ls-body-font);
   color: var(--ls-text);
   background: var(--ls-input-bg);
-  border: 1px solid var(--ls-input-border);
-  border-radius: 10px;
+  border: 1px solid var(--ls-border);
+  border-radius: 8px;
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 .ls-input::placeholder {
-  color: var(--ls-input-placeholder);
+  color: var(--ls-text-secondary);
+  opacity: 0.7;
 }
 .ls-input:focus {
-  border-color: var(--ls-accent);
+  border-color: var(--ls-primary);
   box-shadow: 0 0 0 3px var(--ls-focus-ring);
 }
 .ls-input[aria-invalid="true"] {
@@ -164,34 +331,43 @@ body.ls-body {
   align-items: center;
 }
 .ls-input-group .ls-input {
-  padding-right: 44px;
+  padding-right: 48px;
 }
 .ls-reveal {
   position: absolute;
-  right: 6px;
+  right: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border: none;
   background: transparent;
-  color: var(--ls-text-muted);
+  color: var(--ls-text-secondary);
   cursor: pointer;
   border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
 }
 .ls-reveal:hover {
   color: var(--ls-text);
+  background: rgba(0, 0, 0, 0.04);
+}
+.ls-reveal svg {
+  width: 20px;
+  height: 20px;
 }
 
 .ls-input-error {
-  display: block;
-  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
   font-size: 12.5px;
   color: var(--ls-error);
+}
+.ls-input-error svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
 }
 
 .ls-options {
@@ -200,6 +376,7 @@ body.ls-body {
   justify-content: space-between;
   margin-bottom: 22px;
   font-size: 13px;
+  min-height: 20px;
 }
 .ls-checkbox {
   display: flex;
@@ -208,13 +385,13 @@ body.ls-body {
   color: var(--ls-text-secondary);
 }
 .ls-checkbox input {
-  accent-color: var(--ls-accent);
-  width: 15px;
-  height: 15px;
+  accent-color: var(--ls-primary);
+  width: 16px;
+  height: 16px;
 }
 
 .ls-link {
-  color: var(--ls-accent);
+  color: var(--ls-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -224,86 +401,98 @@ body.ls-body {
 
 .ls-button {
   width: 100%;
-  padding: 12px 16px;
-  font-size: 14px;
+  height: 48px;
+  font-size: 15px;
   font-weight: 600;
-  font-family: inherit;
-  border-radius: 10px;
-  border: 1px solid var(--ls-accent);
-  background: var(--ls-accent);
-  color: var(--ls-accent-on);
+  font-family: var(--ls-body-font);
+  border-radius: 8px;
+  border: 1px solid var(--ls-primary);
+  background: var(--ls-primary);
+  color: #fff;
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background 200ms ease, box-shadow 200ms ease, transform 150ms ease;
 }
 .ls-button:hover {
-  background: var(--ls-accent-hover);
-  border-color: var(--ls-accent-hover);
+  background: var(--ls-primary-hover);
+  border-color: var(--ls-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px var(--ls-focus-ring);
+}
+.ls-button:active {
+  transform: translateY(0);
 }
 .ls-button:disabled {
   opacity: 0.6;
   cursor: default;
-}
-.ls-button-secondary {
-  background: transparent;
-  color: var(--ls-text-secondary);
-  border-color: var(--ls-input-border);
-  margin-top: 10px;
-}
-.ls-button-secondary:hover {
-  background: var(--ls-input-bg);
-  color: var(--ls-text);
-  border-color: var(--ls-text-muted);
+  transform: none;
+  box-shadow: none;
 }
 
+@media (prefers-color-scheme: dark) {
+  .ls-button {
+    color: #071435;
+  }
+}
+
+.ls-button-secondary {
+  background: transparent;
+  color: var(--ls-text);
+  border-color: var(--ls-border);
+}
+.ls-button-secondary:hover {
+  background: rgba(26, 115, 232, 0.06);
+  color: var(--ls-primary);
+  border-color: var(--ls-primary);
+}
+
+/* ---- alerts (non-field server messages) ---- */
 .ls-alert {
   display: flex;
   gap: 8px;
   padding: 11px 13px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 13px;
-  margin-bottom: 20px;
   line-height: 1.4;
+  margin-bottom: 20px;
+}
+.ls-alert svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
 }
 .ls-alert-error {
-  background: var(--ls-error-bg);
+  background: rgba(217, 48, 37, 0.1);
   color: var(--ls-error);
 }
 .ls-alert-success {
-  background: var(--ls-success-bg);
-  color: var(--ls-success);
+  background: rgba(15, 157, 88, 0.12);
+  color: var(--ls-secondary);
 }
 .ls-alert-warning,
 .ls-alert-info {
-  background: var(--ls-input-bg);
+  background: rgba(95, 99, 104, 0.12);
   color: var(--ls-text-secondary);
 }
 
-.ls-info {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--ls-card-border);
-  font-size: 13px;
-  color: var(--ls-text-muted);
-  text-align: center;
-}
-
+/* ---- social / divider ---- */
 .ls-social {
-  margin-top: 20px;
+  margin-top: 18px;
 }
-.ls-social-divider {
+.ls-divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--ls-text-muted);
+  color: var(--ls-text-secondary);
   font-size: 12px;
-  margin: 18px 0;
+  margin: 20px 0;
 }
-.ls-social-divider::before,
-.ls-social-divider::after {
+.ls-divider::before,
+.ls-divider::after {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--ls-card-border);
+  background: var(--ls-border);
 }
 .ls-social-list {
   list-style: none;
@@ -318,18 +507,33 @@ body.ls-body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--ls-input-border);
-  border-radius: 10px;
-  color: var(--ls-text-secondary);
+  height: 46px;
+  border: 1px solid var(--ls-border);
+  border-radius: 24px;
+  color: var(--ls-text);
   text-decoration: none;
   font-size: 14px;
+  font-weight: 500;
+  transition: background 150ms ease;
 }
 .ls-social-list a:hover {
-  background: var(--ls-input-bg);
-  color: var(--ls-text);
+  background: rgba(26, 115, 232, 0.06);
 }
 
+/* ---- footer info ---- */
+.ls-info {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ls-border);
+  font-size: 13px;
+  color: var(--ls-text-secondary);
+  text-align: center;
+}
+.ls-info .ls-link {
+  font-weight: 500;
+}
+
+/* ---- locale ---- */
 .ls-locale {
   display: flex;
   justify-content: flex-end;
@@ -338,9 +542,87 @@ body.ls-body {
 .ls-locale select {
   font-family: inherit;
   font-size: 12.5px;
-  color: var(--ls-text-muted);
+  color: var(--ls-text-secondary);
   background: transparent;
-  border: 1px solid var(--ls-card-border);
+  border: 1px solid var(--ls-border);
   border-radius: 8px;
   padding: 4px 8px;
+}
+
+/* ============================================================
+   Motion — only when the user hasn't asked to reduce it
+   ============================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .ls-hero-aurora span {
+    animation: ls-drift 20s ease-in-out infinite;
+  }
+  .ls-hero-aurora span:nth-child(2) {
+    animation-delay: -7s;
+  }
+  .ls-hero-aurora span:nth-child(3) {
+    animation-delay: -13s;
+  }
+  .ls-hero-body,
+  .ls-hero-brand,
+  .ls-hero-footer {
+    animation: ls-fade-up 0.5s ease-out both;
+  }
+  .ls-hero-body {
+    animation-delay: 0.1s;
+  }
+  .ls-hero-footer {
+    animation-delay: 0.2s;
+  }
+  .ls-pane .ls-card {
+    animation: ls-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 0.15s;
+  }
+}
+
+@keyframes ls-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(60px, -40px) scale(1.1);
+  }
+  66% {
+    transform: translate(-40px, 50px) scale(0.95);
+  }
+}
+@keyframes ls-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ls-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================
+   Responsive — collapse to single column, hide hero
+   ============================================================ */
+@media (max-width: 860px) {
+  .ls-split {
+    grid-template-columns: 1fr;
+  }
+  .ls-hero {
+    display: none;
+  }
+  .ls-pane {
+    min-height: 100vh;
+  }
 }
