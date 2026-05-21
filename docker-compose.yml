@@ -12,6 +12,9 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak:/opt/keycloak/data/import:ro
+      # Custom "logstream" login theme (built from ./keycloak-theme via `npm run build-keycloak-theme`).
+      # KC 26 falls outside Keycloakify's 22-to-25 range, so use the all-other-versions jar.
+      - ./keycloak-theme/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar:/opt/keycloak/providers/logstream-theme.jar:ro
     ports:
       - "9090:8080"
     restart: unless-stopped

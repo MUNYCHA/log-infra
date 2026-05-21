@@ -1,0 +1,346 @@
+/*
+ * Logstream login theme — mirrors the dashboard look (src/constants/theme.js).
+ * Self-contained: own class names (ls-*), no PatternFly dependency, so it is
+ * stable across Keycloak versions. Light/dark follow prefers-color-scheme.
+ */
+
+@font-face {
+  font-family: "Roboto";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url(./assets/fonts/Roboto-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2212;
+}
+@font-face {
+  font-family: "Roboto Mono";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url(./assets/fonts/RobotoMono-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2212;
+}
+
+:root {
+  --ls-bg: #f1f3f4;
+  --ls-card: #ffffff;
+  --ls-card-border: #e3e7eb;
+  --ls-card-shadow: 0 1px 3px rgba(60, 64, 67, 0.12), 0 10px 24px rgba(60, 64, 67, 0.12);
+  --ls-text: #202124;
+  --ls-text-secondary: #3c4043;
+  --ls-text-muted: #5f6368;
+  --ls-input-bg: #f1f3f4;
+  --ls-input-border: #dadce0;
+  --ls-input-placeholder: #5f6368;
+  --ls-accent: #1a73e8;
+  --ls-accent-hover: #1557b0;
+  --ls-accent-on: #ffffff;
+  --ls-focus-ring: rgba(26, 115, 232, 0.2);
+  --ls-error: #d93025;
+  --ls-error-bg: #fce8e6;
+  --ls-success: #188038;
+  --ls-success-bg: #e6f4ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ls-bg: #0f0f0f;
+    --ls-card: #202124;
+    --ls-card-border: #353941;
+    --ls-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.52), 0 14px 32px rgba(0, 0, 0, 0.3);
+    --ls-text: #e8eaed;
+    --ls-text-secondary: #bdc1c6;
+    --ls-text-muted: #80868b;
+    --ls-input-bg: #303134;
+    --ls-input-border: #5f6368;
+    --ls-input-placeholder: #80868b;
+    --ls-accent: #8ab4f8;
+    --ls-accent-hover: #669df6;
+    --ls-accent-on: #071435;
+    --ls-focus-ring: rgba(138, 180, 248, 0.25);
+    --ls-error: #f28b82;
+    --ls-error-bg: rgba(217, 48, 37, 0.18);
+    --ls-success: #81c995;
+    --ls-success-bg: rgba(24, 128, 56, 0.18);
+  }
+}
+
+html.ls-html {
+  height: 100%;
+}
+body.ls-body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--ls-bg);
+  color: var(--ls-text);
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ls-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.ls-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.ls-brand-logo {
+  width: 36px;
+  height: 36px;
+}
+.ls-brand-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ls-text);
+  letter-spacing: -0.01em;
+}
+
+.ls-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--ls-card);
+  border: 1px solid var(--ls-card-border);
+  border-radius: 16px;
+  box-shadow: var(--ls-card-shadow);
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.ls-title {
+  margin: 0 0 24px;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ls-text);
+}
+
+.ls-form-group {
+  margin-bottom: 18px;
+}
+.ls-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ls-text-secondary);
+}
+.ls-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ls-text);
+  background: var(--ls-input-bg);
+  border: 1px solid var(--ls-input-border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.ls-input::placeholder {
+  color: var(--ls-input-placeholder);
+}
+.ls-input:focus {
+  border-color: var(--ls-accent);
+  box-shadow: 0 0 0 3px var(--ls-focus-ring);
+}
+.ls-input[aria-invalid="true"] {
+  border-color: var(--ls-error);
+}
+
+.ls-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ls-input-group .ls-input {
+  padding-right: 44px;
+}
+.ls-reveal {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--ls-text-muted);
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.ls-reveal:hover {
+  color: var(--ls-text);
+}
+
+.ls-input-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ls-error);
+}
+
+.ls-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  font-size: 13px;
+}
+.ls-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ls-text-secondary);
+}
+.ls-checkbox input {
+  accent-color: var(--ls-accent);
+  width: 15px;
+  height: 15px;
+}
+
+.ls-link {
+  color: var(--ls-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.ls-link:hover {
+  text-decoration: underline;
+}
+
+.ls-button {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--ls-accent);
+  background: var(--ls-accent);
+  color: var(--ls-accent-on);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.ls-button:hover {
+  background: var(--ls-accent-hover);
+  border-color: var(--ls-accent-hover);
+}
+.ls-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ls-button-secondary {
+  background: transparent;
+  color: var(--ls-text-secondary);
+  border-color: var(--ls-input-border);
+  margin-top: 10px;
+}
+.ls-button-secondary:hover {
+  background: var(--ls-input-bg);
+  color: var(--ls-text);
+  border-color: var(--ls-text-muted);
+}
+
+.ls-alert {
+  display: flex;
+  gap: 8px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.ls-alert-error {
+  background: var(--ls-error-bg);
+  color: var(--ls-error);
+}
+.ls-alert-success {
+  background: var(--ls-success-bg);
+  color: var(--ls-success);
+}
+.ls-alert-warning,
+.ls-alert-info {
+  background: var(--ls-input-bg);
+  color: var(--ls-text-secondary);
+}
+
+.ls-info {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ls-card-border);
+  font-size: 13px;
+  color: var(--ls-text-muted);
+  text-align: center;
+}
+
+.ls-social {
+  margin-top: 20px;
+}
+.ls-social-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ls-text-muted);
+  font-size: 12px;
+  margin: 18px 0;
+}
+.ls-social-divider::before,
+.ls-social-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ls-card-border);
+}
+.ls-social-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ls-social-list a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ls-input-border);
+  border-radius: 10px;
+  color: var(--ls-text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.ls-social-list a:hover {
+  background: var(--ls-input-bg);
+  color: var(--ls-text);
+}
+
+.ls-locale {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.ls-locale select {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ls-text-muted);
+  background: transparent;
+  border: 1px solid var(--ls-card-border);
+  border-radius: 8px;
+  padding: 4px 8px;
+}

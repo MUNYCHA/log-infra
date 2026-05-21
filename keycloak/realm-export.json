@@ -2,6 +2,7 @@
   "realm": "logstream",
   "enabled": true,
   "displayName": "LogStream",
+  "loginTheme": "logstream",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
