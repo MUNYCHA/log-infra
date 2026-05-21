@@ -25,8 +25,9 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["*"],
-      "webOrigins": ["+"],
+      "_comment": "REPLACE http://REPLACE_WITH_SERVER_ORIGIN below with your exact public origin, e.g. http://10.0.0.5 (no trailing slash). Wildcards (* / +) are an open-redirect token-theft risk and must not ship to prod.",
+      "redirectUris": ["http://REPLACE_WITH_SERVER_ORIGIN/*"],
+      "webOrigins": ["http://REPLACE_WITH_SERVER_ORIGIN"],
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },

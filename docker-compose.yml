@@ -28,12 +28,12 @@ services:
       context: ../log-dashboard-ui
       dockerfile: Dockerfile
       args:
-        VITE_WS_URL: ${VITE_WS_URL}
+        # WS/SSO URLs default to same-origin at runtime (see UI src/config.js);
+        # leave VITE_WS_URL / VITE_SSO_LOGIN_URL blank for the standard proxied deploy.
+        VITE_WS_URL: ${VITE_WS_URL:-}
         VITE_MAX_LOGS_PER_TOPIC: ${VITE_MAX_LOGS_PER_TOPIC:-500}
         VITE_MAX_MESSAGE_LENGTH: ${VITE_MAX_MESSAGE_LENGTH:-50000}
-        VITE_SSO_LOGIN_URL: ${VITE_SSO_LOGIN_URL}
-        VITE_SSO_LOGOUT_URL: ${VITE_SSO_LOGOUT_URL}
-        VITE_SSO_TOKEN_URL: ${VITE_SSO_TOKEN_URL}
+        VITE_SSO_LOGIN_URL: ${VITE_SSO_LOGIN_URL:-}
         VITE_SSO_CLIENT_ID: ${VITE_SSO_CLIENT_ID}
     ports:
       - "80:80"
