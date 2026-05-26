@@ -6,8 +6,6 @@ const { KcPageStory } = createKcPageStory({ pageId: "login.ftl" });
 const meta = {
     title: "login/Login",
     component: KcPageStory,
-    // Render edge-to-edge: the login is a full-viewport two-column layout, so
-    // Storybook's default "padded" wrapper makes the panels look detached.
     parameters: { layout: "fullscreen" }
 } satisfies Meta<typeof KcPageStory>;
 

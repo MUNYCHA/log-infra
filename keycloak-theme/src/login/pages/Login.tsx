@@ -32,15 +32,6 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
                     <p className="ls-subtitle">to continue to {brand}</p>
                 </>
             }
-            displayInfo
-            infoNode={
-                <span>
-                    Don&apos;t have access?{" "}
-                    <a className="ls-link" href="mailto:">
-                        Contact your admin
-                    </a>
-                </span>
-            }
             socialProvidersNode={
                 realm.password && social?.providers !== undefined && social.providers.length !== 0 ? (
                     <div id="kc-social-providers" className="ls-social">
