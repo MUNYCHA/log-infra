@@ -45,8 +45,8 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
             <div className="ls-card">
                 <div className="ls-card-icon">
                     <picture>
-                        <source srcSet={logoDark} media="(prefers-color-scheme: dark)" />
-                        <img src={logoLight} alt="" />
+                        <source srcSet={logoLight} media="(prefers-color-scheme: dark)" />
+                        <img src={logoDark} alt="" />
                     </picture>
                 </div>
 
