@@ -6,7 +6,7 @@ import { useInitialize } from "keycloakify/login/Template.useInitialize";
 import type { TemplateProps } from "keycloakify/login/TemplateProps";
 import type { KcContext } from "./KcContext";
 import type { I18n } from "./i18n";
-import logoUrl from "./assets/user.png";
+import logoUrl from "./assets/add-user.png";
 import "./main.css";
 
 export default function Template(props: TemplateProps<KcContext, I18n>) {
