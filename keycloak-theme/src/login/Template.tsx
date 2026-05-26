@@ -6,7 +6,7 @@ import { useInitialize } from "keycloakify/login/Template.useInitialize";
 import type { TemplateProps } from "keycloakify/login/TemplateProps";
 import type { KcContext } from "./KcContext";
 import type { I18n } from "./i18n";
-import logoUrl from "./assets/logo.svg";
+import logoUrl from "./assets/user.png";
 import "./main.css";
 
 // Login page gets the two-column Material hero+card layout; every other auth
