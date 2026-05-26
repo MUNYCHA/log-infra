@@ -25,6 +25,11 @@
   --ls-success: #1e8e3e;
   --ls-focus-ring: rgba(26, 115, 232, 0.2);
   --ls-body-font: "Roboto", "Segoe UI", Arial, sans-serif;
+  --ls-card-shadow:
+    0 1px 2px rgba(60, 64, 67, 0.10),
+    0 4px 12px rgba(60, 64, 67, 0.10),
+    0 12px 32px rgba(60, 64, 67, 0.08),
+    0 24px 56px rgba(60, 64, 67, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -40,6 +45,11 @@
     --ls-error: #f28b82;
     --ls-success: #81c995;
     --ls-focus-ring: rgba(138, 180, 248, 0.25);
+    --ls-card-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.40),
+      0 4px 12px rgba(0, 0, 0, 0.36),
+      0 12px 32px rgba(0, 0, 0, 0.28),
+      0 24px 56px rgba(0, 0, 0, 0.20);
   }
 }
 
@@ -78,8 +88,9 @@ body.ls-body {
   max-width: 450px;
   background: var(--ls-surface);
   border: 1px solid var(--ls-border);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 48px 40px 36px;
+  box-shadow: var(--ls-card-shadow);
 }
 
 .ls-card-icon {
@@ -386,6 +397,6 @@ body.ls-body {
     border: none;
     border-radius: 0;
     padding: 32px 24px 28px;
-    box-shadow: none;
+    box-shadow: none !important;
   }
 }
