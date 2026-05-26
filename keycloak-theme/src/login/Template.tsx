@@ -6,8 +6,7 @@ import { useInitialize } from "keycloakify/login/Template.useInitialize";
 import type { TemplateProps } from "keycloakify/login/TemplateProps";
 import type { KcContext } from "./KcContext";
 import type { I18n } from "./i18n";
-import logoLight from "./assets/user_light.png";
-import logoDark from "./assets/user_dark.png";
+import logoUrl from "./assets/user_color.png";
 import "./main.css";
 
 export default function Template(props: TemplateProps<KcContext, I18n>) {
@@ -44,10 +43,7 @@ export default function Template(props: TemplateProps<KcContext, I18n>) {
         <div className="ls-page">
             <div className="ls-card">
                 <div className="ls-card-icon">
-                    <picture>
-                        <source srcSet={logoLight} media="(prefers-color-scheme: dark)" />
-                        <img src={logoDark} alt="" />
-                    </picture>
+                    <img src={logoUrl} alt="" />
                 </div>
 
                 {enabledLanguages.length > 1 && (
