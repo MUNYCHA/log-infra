@@ -5,10 +5,8 @@ import { useIsPasswordRevealed } from "keycloakify/tools/useIsPasswordRevealed";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 
-// Username/password login styled to match the dashboard (Material outlined
-// inputs, blue CTA, inline errors). Standard Keycloak password flow; passkey/
-// WebAuthn conditional UI is intentionally omitted — add it back from
-// keycloakify's default Login.tsx if the realm enables it.
+// Underline-style inputs with floating labels and leading icons.
+// No box borders — just a bottom bar that animates on focus.
 export default function Login(props: PageProps<Extract<KcContext, { pageId: "login.ftl" }>, I18n>) {
     const { kcContext, i18n, Template, doUseDefaultCss, classes } = props;
 
@@ -16,8 +14,17 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
     const { msg, msgStr } = i18n;
 
     const [isLoginButtonDisabled, setIsLoginButtonDisabled] = useState(false);
+    const { isPasswordRevealed, toggleIsPasswordRevealed } = useIsPasswordRevealed({
+        passwordInputId: "password"
+    });
     const hasError = messagesPerField.existsError("username", "password");
     const brand = realm.displayName || "LogStream";
+
+    const usernameLabel = !realm.loginWithEmailAllowed
+        ? msg("username")
+        : !realm.registrationEmailAsUsername
+          ? msg("usernameOrEmail")
+          : msg("email");
 
     return (
         <Template
@@ -64,44 +71,71 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
                             action={url.loginAction}
                             method="post"
                         >
+                            {/* ── Username field ── */}
                             {!usernameHidden && (
                                 <div className="ls-form-group">
-                                    <label htmlFor="username" className="ls-label">
-                                        {!realm.loginWithEmailAllowed
-                                            ? msg("username")
-                                            : !realm.registrationEmailAsUsername
-                                              ? msg("usernameOrEmail")
-                                              : msg("email")}
-                                    </label>
-                                    <input
-                                        tabIndex={2}
-                                        id="username"
-                                        className="ls-input"
-                                        name="username"
-                                        defaultValue={login.username ?? ""}
-                                        type="text"
-                                        autoFocus
-                                        autoComplete="username"
-                                        aria-invalid={hasError}
-                                    />
+                                    <div className="ls-field">
+                                        <span className="ls-field-icon" aria-hidden="true">
+                                            <IconUser />
+                                        </span>
+                                        <div className="ls-field-inner">
+                                            <div className="ls-field-row">
+                                                <input
+                                                    tabIndex={2}
+                                                    id="username"
+                                                    className="ls-input"
+                                                    name="username"
+                                                    defaultValue={login.username ?? ""}
+                                                    type="text"
+                                                    autoFocus
+                                                    autoComplete="username"
+                                                    aria-invalid={hasError}
+                                                    placeholder=" "
+                                                />
+                                            </div>
+                                            <label htmlFor="username" className="ls-label">
+                                                {usernameLabel}
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
+                            {/* ── Password field ── */}
                             <div className="ls-form-group">
-                                <label htmlFor="password" className="ls-label">
-                                    {msg("password")}
-                                </label>
-                                <PasswordWrapper i18n={i18n} passwordInputId="password">
-                                    <input
-                                        tabIndex={3}
-                                        id="password"
-                                        className="ls-input"
-                                        name="password"
-                                        type="password"
-                                        autoComplete="current-password"
-                                        aria-invalid={hasError}
-                                    />
-                                </PasswordWrapper>
+                                <div className="ls-field">
+                                    <span className="ls-field-icon" aria-hidden="true">
+                                        <IconLock />
+                                    </span>
+                                    <div className="ls-field-inner">
+                                        <div className="ls-field-row">
+                                            <input
+                                                tabIndex={3}
+                                                id="password"
+                                                className="ls-input"
+                                                name="password"
+                                                type={isPasswordRevealed ? "text" : "password"}
+                                                autoComplete="current-password"
+                                                aria-invalid={hasError}
+                                                placeholder=" "
+                                            />
+                                            <button
+                                                type="button"
+                                                className="ls-reveal"
+                                                aria-label={msgStr(
+                                                    isPasswordRevealed ? "hidePassword" : "showPassword"
+                                                )}
+                                                aria-controls="password"
+                                                onClick={toggleIsPasswordRevealed}
+                                            >
+                                                {isPasswordRevealed ? <IconEyeOff /> : <IconEye />}
+                                            </button>
+                                        </div>
+                                        <label htmlFor="password" className="ls-label">
+                                            {msg("password")}
+                                        </label>
+                                    </div>
+                                </div>
                                 {hasError && (
                                     <span id="input-error" className="ls-input-error" aria-live="polite">
                                         <IconError />
@@ -116,6 +150,7 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
                                 )}
                             </div>
 
+                            {/* ── Options row ── */}
                             <div className="ls-options">
                                 {realm.rememberMe && !usernameHidden ? (
                                     <label className="ls-checkbox">
@@ -138,6 +173,7 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
                                 )}
                             </div>
 
+                            {/* ── Submit ── */}
                             <div id="kc-form-buttons">
                                 <input
                                     type="hidden"
@@ -163,54 +199,47 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
     );
 }
 
-function PasswordWrapper(props: { i18n: I18n; passwordInputId: string; children: JSX.Element }) {
-    const { i18n, passwordInputId, children } = props;
-    const { msgStr } = i18n;
-    const { isPasswordRevealed, toggleIsPasswordRevealed } = useIsPasswordRevealed({ passwordInputId });
+/* ── Icon components ── */
 
+function IconUser() {
     return (
-        <div className="ls-input-group">
-            {children}
-            <button
-                type="button"
-                className="ls-reveal"
-                aria-label={msgStr(isPasswordRevealed ? "hidePassword" : "showPassword")}
-                aria-controls={passwordInputId}
-                onClick={toggleIsPasswordRevealed}
-            >
-                {isPasswordRevealed ? <IconEyeOff /> : <IconEye />}
-            </button>
-        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+        </svg>
     );
 }
 
 function IconEye() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
             <circle cx="12" cy="12" r="3" />
         </svg>
     );
 }
+
 function IconEyeOff() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-3.2 4M6.6 6.6A17 17 0 002 12s3.5 7 10 7a9.6 9.6 0 004.3-1" />
             <path d="M9.9 9.9a3 3 0 004.2 4.2" />
         </svg>
     );
 }
+
 function IconError() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7.5v5M12 16h.01" />
         </svg>
     );
 }
+
 function IconLock() {
     return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <rect x="5" y="11" width="14" height="9" rx="2" />
             <path d="M8 11V8a4 4 0 018 0v3" />
         </svg>

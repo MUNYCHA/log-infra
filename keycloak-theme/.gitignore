@@ -52,7 +52,9 @@ jspm_packages
 
 /dist
 
-/dist_keycloak
+/dist_keycloak/*
+# Track the production JAR so `git pull` + `docker compose up` works on the server
+!/dist_keycloak/keycloak-theme-for-kc-all-other-versions.jar
 /build
 /storybook-static
 

@@ -121,67 +121,176 @@ body.ls-body {
   line-height: 1.4;
 }
 
-/* ---- form ---- */
+/* ============================================================
+   Underline fields — floating label + leading icon
+   ============================================================ */
+
+/* Extra top padding per group reserves space for the floating label */
 .ls-form-group {
-  margin-bottom: 24px;
-}
-.ls-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--ls-text);
-}
-.ls-input {
-  width: 100%;
-  height: 56px;
-  padding: 0 16px;
-  font-size: 16px;
-  font-family: var(--ls-body-font);
-  color: var(--ls-text);
-  background: var(--ls-input-bg);
-  border: 1px solid var(--ls-border);
-  border-radius: 4px;
-  outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-.ls-input:focus {
-  border-color: var(--ls-primary);
-  border-width: 2px;
-  padding: 0 15px;
-  box-shadow: none;
-}
-.ls-input[aria-invalid="true"] {
-  border-color: var(--ls-error);
-  border-width: 2px;
-  padding: 0 15px;
+  margin-bottom: 16px;
+  padding-top: 24px;
 }
 
-.ls-input-group {
-  position: relative;
+/* Outer row: icon on the left, field on the right */
+.ls-field {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  gap: 12px;
 }
-.ls-input-group .ls-input {
-  padding-right: 52px;
-}
-.ls-input-group .ls-input:focus {
-  padding-right: 51px;
-}
-.ls-reveal {
-  position: absolute;
-  right: 8px;
+
+/* Leading icon */
+.ls-field-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 22px;
+  height: 48px;
+  padding-bottom: 8px;    /* sits on the same baseline as the input text */
+  color: var(--ls-text-secondary);
+  flex-shrink: 0;
+  transition: color 250ms ease;
+}
+.ls-field:focus-within .ls-field-icon {
+  color: var(--ls-primary);
+}
+.ls-field-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Inner wrapper: carries the underline pseudo-elements */
+.ls-field-inner {
+  position: relative;
+  flex: 1;
+}
+
+/* Static 1 px baseline */
+.ls-field-inner::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--ls-border);
+  transition: background 250ms ease;
+}
+
+/* Animated 2 px accent line — grows from center on focus */
+.ls-field-inner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--ls-primary);
+  transform: translateX(-50%);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ls-field-inner:focus-within::after {
+  width: 100%;
+}
+
+/* Error state: full red underline */
+.ls-field-inner:has(.ls-input[aria-invalid="true"])::before {
+  background: var(--ls-error);
+}
+.ls-field-inner:has(.ls-input[aria-invalid="true"])::after {
+  width: 100%;
+  background: var(--ls-error);
+}
+
+/* Row inside inner: input + optional reveal button */
+.ls-field-row {
+  display: flex;
+  align-items: center;
+}
+
+/* The actual input — no borders, no background */
+.ls-input {
+  flex: 1;
+  width: 100%;
+  height: 48px;
+  padding: 0;
+  padding-bottom: 8px;          /* text sits above the underline */
+  font-size: 16px;
+  font-family: var(--ls-body-font);
+  color: var(--ls-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  caret-color: var(--ls-primary);
+}
+.ls-input[aria-invalid="true"] {
+  caret-color: var(--ls-error);
+}
+
+/* Floating label — starts as placeholder text, floats up on focus/fill */
+.ls-label {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) translateY(-4px); /* center in input text area */
+  font-size: 16px;
+  font-family: var(--ls-body-font);
+  font-weight: 400;
+  color: var(--ls-text-secondary);
+  pointer-events: none;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    top       200ms cubic-bezier(0.4, 0, 0.2, 1),
+    font-size 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    font-weight 200ms ease,
+    color     200ms ease,
+    transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Float up when the field has focus */
+.ls-field-inner:focus-within .ls-label {
+  top: 0;
+  transform: translateY(-100%) translateY(-6px);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ls-primary);
+  letter-spacing: 0.3px;
+}
+
+/* Float up when the input has a value (placeholder=" " trick) */
+.ls-field-inner:has(.ls-input:not(:placeholder-shown)) .ls-label {
+  top: 0;
+  transform: translateY(-100%) translateY(-6px);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Unfocused-but-filled: go back to secondary color */
+.ls-field-inner:not(:focus-within):has(.ls-input:not(:placeholder-shown)) .ls-label {
+  color: var(--ls-text-secondary);
+}
+
+/* Error: label turns red */
+.ls-field-inner:has(.ls-input[aria-invalid="true"]) .ls-label {
+  color: var(--ls-error);
+}
+
+/* Password reveal toggle */
+.ls-reveal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 4px;           /* align with input text baseline */
+  flex-shrink: 0;
   border: none;
   background: transparent;
   color: var(--ls-text-secondary);
   cursor: pointer;
   border-radius: 50%;
-  transition: background 150ms ease;
+  transition: background 150ms ease, color 150ms ease;
 }
 .ls-reveal:hover {
   background: rgba(95, 99, 104, 0.12);
