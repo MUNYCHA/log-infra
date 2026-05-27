@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { PageProps } from "keycloakify/login/pages/PageProps";
 import { kcSanitize } from "keycloakify/lib/kcSanitize";
-import { useIsPasswordRevealed } from "keycloakify/tools/useIsPasswordRevealed";
 import type { KcContext } from "../KcContext";
 import type { I18n } from "../i18n";
 
@@ -14,9 +13,8 @@ export default function Login(props: PageProps<Extract<KcContext, { pageId: "log
     const { msg, msgStr } = i18n;
 
     const [isLoginButtonDisabled, setIsLoginButtonDisabled] = useState(false);
-    const { isPasswordRevealed, toggleIsPasswordRevealed } = useIsPasswordRevealed({
-        passwordInputId: "password"
-    });
+    const [isPasswordRevealed, setIsPasswordRevealed] = useState(false);
+    const toggleIsPasswordRevealed = () => setIsPasswordRevealed(v => !v);
     const hasError = messagesPerField.existsError("username", "password");
     const brand = realm.displayName || "LogStream";
 
