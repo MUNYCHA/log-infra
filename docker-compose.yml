@@ -36,6 +36,15 @@ services:
       KC_HOSTNAME: ${APP_ORIGIN}/auth
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
+      JAVA_OPTS_APPEND: "-Xmx512m -Xms256m"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
+        reservations:
+          memory: 512m
+          cpus: "0.25"
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
       # Custom "logstream" login theme (built from ./keycloak-theme via `npm run build-keycloak-theme`).
