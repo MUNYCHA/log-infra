@@ -115,9 +115,19 @@ services:
         VITE_SSO_LOGIN_URL: ""
         VITE_SSO_CLIENT_ID: ${VITE_SSO_CLIENT_ID}
     ports:
+      # Public HTTPS port. Defaults to 443; override with HTTPS_PORT in .env if
+      # 443 is unavailable. nginx still listens on 443 inside the container — only
+      # the host-published port changes. If you set a non-443 port, it must also
+      # appear in APP_ORIGIN (see .env.example).
+      - "${HTTPS_PORT:-443}:443"
+      # Port 80 redirects to HTTPS, but only lands correctly on the standard 443.
+      # With a custom HTTPS_PORT, this redirect targets 443 (dead) — see .env.example.
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # TLS cert + key the lead installs at deploy time (see certs/README.md).
+      # nginx will not start if certs/fullchain.pem and certs/privkey.pem are missing.
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       - keycloak
       - logstream

@@ -15,9 +15,9 @@ Kafka is currently an external dependency. It must be reachable from the
 ```text
 Office browser
   |
-  |  https://SERVER_IP
+  |  https://<SERVER_IP>
   v
-nginx :443 (port 80 redirects to HTTPS)
+nginx HTTPS (HTTPS_PORT, default 443; port 80 redirects to HTTPS)
   |-- /           React dashboard static files
   |-- /auth/*     Keycloak login/OIDC endpoints
   |-- /api/*      logstream REST API
@@ -71,7 +71,8 @@ independently during development.
 - Git
 - A Kafka broker producing `LogEvent` JSON messages
 - A host directory containing downloadable `{topic}.log` files, if download is used
-- A TLS certificate trusted by employee browsers and valid for the server IP
+- A TLS certificate valid for the server IP — self-signed is supported (one-time
+  browser warning per machine), or CA-signed to avoid the warning
 
 The authenticated React client uses OIDC Authorization Code with PKCE, whose
 browser cryptography requires a secure HTTPS context. HTTP access by server IP
@@ -98,27 +99,29 @@ cd /opt/logstream-system/log-infra
 cp .env.example .env
 ```
 
-Edit `.env`. At minimum, set the IP address employees use to open the
-dashboard and replace the initial Keycloak password:
+Edit `.env` and replace every `<PLACEHOLDER>` with a real value. The fields
+left at fixed values below (client id, tuning numbers) are deployment-independent
+and normally need no change:
 
 ```env
-APP_ORIGIN=https://192.168.1.50
+APP_ORIGIN=https://<SERVER_IP>
+HTTPS_PORT=443
 
-KC_BOOTSTRAP_ADMIN_USERNAME=admin
-KC_BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-strong-password
-KC_DB_NAME=keycloak
-KC_DB_USERNAME=keycloak
-KC_DB_PASSWORD=replace-with-a-strong-database-password
+KC_BOOTSTRAP_ADMIN_USERNAME=<admin-username>
+KC_BOOTSTRAP_ADMIN_PASSWORD=<admin-password>
+KC_DB_NAME=<db-name>
+KC_DB_USERNAME=<db-username>
+KC_DB_PASSWORD=<db-password>
 
 VITE_SSO_CLIENT_ID=logstream-ui
 VITE_MAX_LOGS_PER_TOPIC=500
 VITE_MAX_MESSAGE_LENGTH=50000
 
-LOGSTREAM_TOPICS=server-topic,system-topic,app1-topic
-LOGSTREAM_LOG_DIR=/data/logstream-downloads
+LOGSTREAM_TOPICS=<topic-a>,<topic-b>
+LOGSTREAM_LOG_DIR=<host-log-dir>
 JVM_MAX_HEAP=512m
 
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+KAFKA_BOOTSTRAP_SERVERS=<kafka-host:port>
 KAFKA_CONSUMER_GROUP_ID=log-dashboard
 KAFKA_MAX_POLL_RECORDS=500
 ```
@@ -126,11 +129,20 @@ KAFKA_MAX_POLL_RECORDS=500
 `APP_ORIGIN` is used in all browser-address-sensitive locations:
 
 ```text
-React application origin:        https://192.168.1.50
-API/WebSocket allowed origin:     https://192.168.1.50
-Keycloak browser-visible URL:     https://192.168.1.50/auth
-Initial Keycloak UI redirect URI: https://192.168.1.50/*
+React application origin:        https://<SERVER_IP>
+API/WebSocket allowed origin:     https://<SERVER_IP>
+Keycloak browser-visible URL:     https://<SERVER_IP>/auth
+Initial Keycloak UI redirect URI: https://<SERVER_IP>/*
 ```
+
+`HTTPS_PORT` defaults to 443 and normally needs no change. Set it only if 443 is
+unavailable on the server. A browser origin includes its port, so a non-443 port
+has two consequences:
+
+1. Add the same port to `APP_ORIGIN` (e.g. `https://<SERVER_IP>:8080`), or
+   Keycloak rejects login with an origin/redirect mismatch.
+2. The port-80 → HTTPS redirect only lands on 443. With a custom port, leave
+   port 80 closed and have users open `https://<SERVER_IP>:<port>` directly.
 
 On the first Keycloak start, `${APP_ORIGIN}` placeholders in
 `keycloak/logstream-realm.json` are resolved into the imported UI client.
@@ -141,20 +153,28 @@ Admin Console. Startup import skips an already existing realm.
 
 ### 3. Install TLS Certificate Files
 
-Create the nginx certificate directory and place an office-trusted certificate
-and its private key there:
+nginx terminates HTTPS and requires `certs/fullchain.pem` and `certs/privkey.pem`
+to exist before it starts. HTTPS is mandatory — the OIDC/PKCE login uses browser
+crypto that only works in a secure context, so HTTP-by-IP is not supported.
+
+For a no-domain / internal IP deploy, generate a self-signed cert bound to the
+server IP (replace `<SERVER_IP>` with the IP from `APP_ORIGIN`, both places):
 
 ```bash
-mkdir -p /opt/logstream-system/log-infra/certs
-# Install certificate and key as:
-# certs/fullchain.pem
-# certs/privkey.pem
-chmod 600 /opt/logstream-system/log-infra/certs/privkey.pem
+cd /opt/logstream-system/log-infra
+openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout certs/privkey.pem \
+  -out certs/fullchain.pem \
+  -days 825 \
+  -subj "/CN=<SERVER_IP>" \
+  -addext "subjectAltName=IP:<SERVER_IP>"
+chmod 600 certs/privkey.pem
 ```
 
-The certificate must contain the server IP used in `APP_ORIGIN` as an IP Subject
-Alternative Name. Employee browsers must trust its issuing CA; otherwise users
-receive certificate errors and authentication is not a reliable deployment.
+Self-signed certs trigger a one-time browser warning per machine. To avoid it,
+or if you have a domain, install a CA-signed certificate as the same two files.
+Full details and the internal-CA option are in `certs/README.md`. The certificate
+SAN must match the host in `APP_ORIGIN`.
 
 Certificate files and `.env` are ignored by Git.
 
@@ -165,22 +185,22 @@ directory that already contains downloadable log files, or prepare it when
 using the download feature:
 
 ```bash
-sudo mkdir -p /data/logstream-downloads
-sudo chown "$USER":"$USER" /data/logstream-downloads
+sudo mkdir -p <host-log-dir>
+sudo chown "$USER":"$USER" <host-log-dir>
 ```
 
 For:
 
 ```env
-LOGSTREAM_TOPICS=server-topic,app1-topic
-LOGSTREAM_LOG_DIR=/data/logstream-downloads
+LOGSTREAM_TOPICS=<topic-a>,<topic-b>
+LOGSTREAM_LOG_DIR=<host-log-dir>
 ```
 
 downloadable files are:
 
 ```text
-/data/logstream-downloads/server-topic.log
-/data/logstream-downloads/app1-topic.log
+<host-log-dir>/<topic-a>.log
+<host-log-dir>/<topic-b>.log
 ```
 
 This directory does not affect live Kafka/WebSocket streaming.
@@ -218,7 +238,9 @@ to this Compose stack and allow Compose to manage all application networking.
 
 ### 6. Validate And Start
 
-Standard Docker Compose commands are the deployment interface:
+Standard Docker Compose commands are the deployment interface. Run these only
+after `.env` has real values — `docker compose config` fails on the unedited
+`<placeholder>` values (e.g. `LOGSTREAM_LOG_DIR` is read as an undefined volume):
 
 ```bash
 cd /opt/logstream-system/log-infra
@@ -230,7 +252,7 @@ docker compose ps
 Open the dashboard:
 
 ```text
-https://192.168.1.50
+https://<SERVER_IP>
 ```
 
 ## Keycloak Administration And Data
@@ -238,7 +260,7 @@ https://192.168.1.50
 Admin Console URL:
 
 ```text
-https://192.168.1.50/auth/admin/
+https://<SERVER_IP>/auth/admin/
 ```
 
 Create application users in the `logstream` realm. Users authenticate through
@@ -285,8 +307,8 @@ docker compose down
 docker compose up -d
 ```
 
-Only nginx is the browser entry point on HTTPS port `443` (with HTTP port `80`
-redirecting to HTTPS). The
+Only nginx is the browser entry point on the configured HTTPS port (`443` by
+default, set via `HTTPS_PORT`), with HTTP port `80` redirecting to HTTPS. The
 `logstream` API is reached by users through nginx at `/api` and `/ws`.
 
 ## Update Procedure
@@ -359,12 +381,12 @@ docker compose exec logstream wget -qO- http://localhost:8080/actuator/health
 Check that Keycloak discovery is reachable through nginx:
 
 ```bash
-curl -f https://192.168.1.50/auth/realms/logstream/.well-known/openid-configuration
+curl -f https://<SERVER_IP>/auth/realms/logstream/.well-known/openid-configuration
 ```
 
 Browser verification:
 
-1. Open `https://192.168.1.50`.
+1. Open `https://<SERVER_IP>`.
 2. Confirm redirection to Keycloak login.
 3. Sign in with a user in the `logstream` realm.
 4. Confirm available topics appear in the sidebar.
