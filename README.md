@@ -73,6 +73,9 @@ independently during development.
 - A host directory containing downloadable `{topic}.log` files, if download is used
 - A TLS certificate valid for the server IP — self-signed is supported (one-time
   browser warning per machine), or CA-signed to avoid the warning
+- At least 4 GB RAM and 2 CPU cores free for this stack. Worst-case committed
+  memory across the container limits is ~2.75 GB (Keycloak 1g, logstream 1g,
+  PostgreSQL 512m, nginx 256m); the rest is OS and Docker overhead headroom.
 
 The authenticated React client uses OIDC Authorization Code with PKCE, whose
 browser cryptography requires a secure HTTPS context. HTTP access by server IP
