@@ -225,6 +225,12 @@ Attach the running Kafka container if it is managed elsewhere:
 docker network connect --alias kafka monitoring <kafka-container-name>
 ```
 
+This manual attachment belongs to the container instance, not the image or
+name: recreating the Kafka container (image update, `compose up` on its side)
+silently drops it, and the command must be run again. If Kafka is managed by
+its own Compose file, declare the `monitoring` network there as `external`
+with alias `kafka` instead, so the attachment survives recreation.
+
 Kafka must advertise a broker address reachable from the `logstream` container.
 For the example configuration:
 
@@ -235,6 +241,31 @@ KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 Kafka needs a network alias/service hostname `kafka` and an internal advertised
 listener such as `kafka:9092`. A broker that advertises `localhost:9092` will
 not work for a client running inside the `logstream` container.
+
+A Compose-managed Kafka satisfies the whole contract with four properties —
+shown here as a minimal example; remaining broker settings are unaffected:
+
+```yaml
+services:
+  kafka:                          # 1. service name "kafka" = DNS name clients dial
+    environment:
+      # 2. one listener on the Docker network, a second for host-side clients
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:29092
+      # 3. advertise the network DNS name, never localhost, on the internal listener
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
+    ports:
+      - "29092:29092"             # publish only the host listener; 9092 stays internal
+    networks:
+      - monitoring                # 4. join the shared network
+
+networks:
+  monitoring:
+    external: true                # join, don't own — same rule as this stack
+```
+
+Host-side producers and tools use `localhost:29092`; producers on other
+machines need the `HOST` listener to advertise the server's IP instead.
 
 If Kafka is not shared with other systems, a future simplification is to add it
 to this Compose stack and allow Compose to manage all application networking.
