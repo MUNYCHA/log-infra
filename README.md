@@ -213,36 +213,28 @@ This directory does not affect live Kafka/WebSocket streaming.
 The application Compose stack uses an external Docker network named
 `monitoring` so a separately managed Kafka service can join it.
 
-Create the network once:
+Create the network once — this step is always required, because both Compose
+files declare the network `external` and neither will create it:
 
 ```bash
 docker network create monitoring
 ```
 
-Attach the running Kafka container if it is managed elsewhere:
-
-```bash
-docker network connect --alias kafka monitoring <kafka-container-name>
-```
-
-This manual attachment belongs to the container instance, not the image or
-name: recreating the Kafka container (image update, `compose up` on its side)
-silently drops it, and the command must be run again. If Kafka is managed by
-its own Compose file, declare the `monitoring` network there as `external`
-with alias `kafka` instead, so the attachment survives recreation.
-
-Kafka must advertise a broker address reachable from the `logstream` container.
-For the example configuration:
+In every case, Kafka must be resolvable as hostname `kafka` on that network
+and must advertise a broker address reachable from the `logstream` container —
+a broker that advertises `localhost:9092` will not work for a client running
+inside a container. This stack's side is then just:
 
 ```env
 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
 ```
 
-Kafka needs a network alias/service hostname `kafka` and an internal advertised
-listener such as `kafka:9092`. A broker that advertises `localhost:9092` will
-not work for a client running inside the `logstream` container.
+How Kafka meets that contract depends on how it is managed:
 
-A Compose-managed Kafka satisfies the whole contract with four properties —
+**Option A — Kafka has its own Compose file (preferred).** No manual network
+commands and no alias are needed: a service named `kafka` is automatically
+resolvable by that name, and the network membership is declared in the file,
+so it survives container recreation. The whole contract is four properties —
 shown here as a minimal example; remaining broker settings are unaffected:
 
 ```yaml
@@ -266,6 +258,19 @@ networks:
 
 Host-side producers and tools use `localhost:29092`; producers on other
 machines need the `HOST` listener to advertise the server's IP instead.
+
+**Option B — Kafka runs as a container managed outside Compose.** Attach it
+manually, using an alias to provide the `kafka` hostname:
+
+```bash
+docker network connect --alias kafka monitoring <kafka-container-name>
+```
+
+This manual attachment belongs to the container instance, not the image or
+name: recreating the Kafka container (image update, a re-run on its side)
+silently drops it, and the command must be run again. The broker's advertised
+listener requirements are the same as in Option A. Prefer Option A whenever
+the Kafka container's configuration can be edited.
 
 If Kafka is not shared with other systems, a future simplification is to add it
 to this Compose stack and allow Compose to manage all application networking.
