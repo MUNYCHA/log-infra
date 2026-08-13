@@ -7,7 +7,7 @@ This repository owns deployment of the internal-office Logstream application:
 - Keycloak authentication with an internal PostgreSQL identity database
 - nginx as the single browser-facing entry point
 
-Kafka is currently an external dependency. It must be reachable from the
+Redis is currently an external dependency. It must be reachable from the
 `logstream` container on the shared Docker network.
 
 ## System Flow
@@ -25,7 +25,7 @@ nginx HTTPS (HTTPS_PORT, default 443; port 80 redirects to HTTPS)
                          |
                          | consumes log events
                          v
-                       Kafka
+                       Redis
 
 Keycloak -> keycloak-db (PostgreSQL, internal Docker network only)
 ```
@@ -42,11 +42,11 @@ logstream -> Keycloak internal JWKS endpoint to verify JWT signatures
 Live log streaming and log file download are separate:
 
 ```text
-Live view:  Kafka events -> logstream -> WebSocket -> dashboard
+Live view:  Redis events -> logstream -> WebSocket -> dashboard
 Download:   configured host log file -> logstream REST API -> browser
 ```
 
-The API does not write Kafka events into downloadable log files.
+The API does not write Redis events into downloadable log files.
 
 ## Repository Layout
 
@@ -69,8 +69,8 @@ independently during development.
 - Linux server reachable by office browsers through a stable IP address
 - Docker Engine with Docker Compose v2 (`docker compose`)
 - Git
-- A Kafka broker producing `LogEvent` JSON messages
-- A host directory containing downloadable `{topic}.log` files, if download is used
+- A Redis instance publishing `LogEvent` JSON messages on pub/sub channels
+- A host directory containing downloadable `{channel}.log` files, if download is used
 - A TLS certificate valid for the server IP — self-signed is supported (one-time
   browser warning per machine), or CA-signed to avoid the warning
 - At least 4 GB RAM and 2 CPU cores free for this stack. Worst-case committed
@@ -117,16 +117,16 @@ KC_DB_USERNAME=<db-username>
 KC_DB_PASSWORD=<db-password>
 
 VITE_SSO_CLIENT_ID=logstream-ui
-VITE_MAX_LOGS_PER_TOPIC=500
+VITE_MAX_LOGS_PER_CHANNEL=500
 VITE_MAX_MESSAGE_LENGTH=50000
 
-LOGSTREAM_TOPICS=<topic-a>,<topic-b>
+LOGSTREAM_CHANNELS=<channel-a>,<channel-b>
 LOGSTREAM_LOG_DIR=<host-log-dir>
 JVM_MAX_HEAP=512m
 
-KAFKA_BOOTSTRAP_SERVERS=<kafka-host:port>
-KAFKA_CONSUMER_GROUP_ID=log-dashboard
-KAFKA_MAX_POLL_RECORDS=500
+REDIS_HOST=<redis-host>
+REDIS_PORT=6379
+REDIS_PASSWORD=<password-if-any>
 ```
 
 `APP_ORIGIN` is used in all browser-address-sensitive locations:
@@ -195,23 +195,23 @@ sudo chown "$USER":"$USER" <host-log-dir>
 For:
 
 ```env
-LOGSTREAM_TOPICS=<topic-a>,<topic-b>
+LOGSTREAM_CHANNELS=<channel-a>,<channel-b>
 LOGSTREAM_LOG_DIR=<host-log-dir>
 ```
 
 downloadable files are:
 
 ```text
-<host-log-dir>/<topic-a>.log
-<host-log-dir>/<topic-b>.log
+<host-log-dir>/<channel-a>.log
+<host-log-dir>/<channel-b>.log
 ```
 
-This directory does not affect live Kafka/WebSocket streaming.
+This directory does not affect live Redis/WebSocket streaming.
 
-### 5. Connect Kafka
+### 5. Connect Redis
 
 The application Compose stack uses an external Docker network named
-`monitoring` so a separately managed Kafka service can join it.
+`monitoring` so a separately managed Redis service can join it.
 
 Create the network once — this step is always required, because both Compose
 files declare the network `external` and neither will create it:
@@ -220,59 +220,49 @@ files declare the network `external` and neither will create it:
 docker network create monitoring
 ```
 
-In every case, Kafka must be resolvable as hostname `kafka` on that network
-and must advertise a broker address reachable from the `logstream` container —
-a broker that advertises `localhost:9092` will not work for a client running
-inside a container. This stack's side is then just:
+In every case, Redis must be resolvable as hostname `redis` on that network
+and must be reachable from the `logstream` container — an instance bound only
+to `localhost` will not work for a client running inside a container. This
+stack's side is then just:
 
 ```env
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+REDIS_HOST=redis
+REDIS_PORT=6379
 ```
 
-How Kafka meets that contract depends on how it is managed:
+How Redis meets that contract depends on how it is managed:
 
-**Option A — Kafka has its own Compose file (preferred).** No manual network
-commands and no alias are needed: a service named `kafka` is automatically
+**Option A — Redis has its own Compose file (preferred).** No manual network
+commands and no alias are needed: a service named `redis` is automatically
 resolvable by that name, and the network membership is declared in the file,
-so it survives container recreation. The whole contract is four properties —
-shown here as a minimal example; remaining broker settings are unaffected:
+so it survives container recreation. Redis needs far less configuration than
+Kafka did — a minimal example:
 
 ```yaml
 services:
-  kafka:                          # 1. service name "kafka" = DNS name clients dial
-    environment:
-      # 2. one listener on the Docker network, a second for host-side clients
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:29092
-      # 3. advertise the network DNS name, never localhost, on the internal listener
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT
-    ports:
-      - "29092:29092"             # publish only the host listener; 9092 stays internal
+  redis:                          # service name "redis" = DNS name clients dial
+    image: redis:7-alpine
     networks:
-      - monitoring                # 4. join the shared network
+      - monitoring                # join the shared network
 
 networks:
   monitoring:
     external: true                # join, don't own — same rule as this stack
 ```
 
-Host-side producers and tools use `localhost:29092`; producers on other
-machines need the `HOST` listener to advertise the server's IP instead.
-
-**Option B — Kafka runs as a container managed outside Compose.** Attach it
-manually, using an alias to provide the `kafka` hostname:
+**Option B — Redis runs as a container managed outside Compose.** Attach it
+manually, using an alias to provide the `redis` hostname:
 
 ```bash
-docker network connect --alias kafka monitoring <kafka-container-name>
+docker network connect --alias redis monitoring <redis-container-name>
 ```
 
 This manual attachment belongs to the container instance, not the image or
-name: recreating the Kafka container (image update, a re-run on its side)
-silently drops it, and the command must be run again. The broker's advertised
-listener requirements are the same as in Option A. Prefer Option A whenever
-the Kafka container's configuration can be edited.
+name: recreating the Redis container (image update, a re-run on its side)
+silently drops it, and the command must be run again. Prefer Option A whenever
+the Redis container's configuration can be edited.
 
-If Kafka is not shared with other systems, a future simplification is to add it
+If Redis is not shared with other systems, a future simplification is to add it
 to this Compose stack and allow Compose to manage all application networking.
 
 ### 6. Validate And Start
@@ -428,9 +418,9 @@ Browser verification:
 1. Open `https://<SERVER_IP>`.
 2. Confirm redirection to Keycloak login.
 3. Sign in with a user in the `logstream` realm.
-4. Confirm available topics appear in the sidebar.
-5. Select a topic and confirm live log events appear when Kafka receives events.
-6. Confirm the download action succeeds only for configured topics with files in `LOGSTREAM_LOG_DIR`.
+4. Confirm available channels appear in the sidebar.
+5. Select a channel and confirm live log events appear when Redis receives events.
+6. Confirm the download action succeeds only for configured channels with files in `LOGSTREAM_LOG_DIR`.
 
 ## Keycloak Backup
 
@@ -502,19 +492,18 @@ docker compose ps
 docker compose logs logstream keycloak nginx
 ```
 
-### No Kafka Logs Arrive
+### No Redis Logs Arrive
 
-Verify that Kafka:
+Verify that Redis:
 
-- Produces events on topics listed in `LOGSTREAM_TOPICS`.
+- Publishes events on channels listed in `LOGSTREAM_CHANNELS`.
 - Is attached to the `monitoring` Docker network.
-- Is reachable at `KAFKA_BOOTSTRAP_SERVERS` from the API container.
-- Advertises a container-reachable listener rather than `localhost`.
+- Is reachable at `REDIS_HOST`/`REDIS_PORT` from the API container.
 
 ### Download Returns Not Found
 
 Verify:
 
-- Requested topic is present in `LOGSTREAM_TOPICS`.
-- `${LOGSTREAM_LOG_DIR}/{topic}.log` exists on the host.
+- Requested channel is present in `LOGSTREAM_CHANNELS`.
+- `${LOGSTREAM_LOG_DIR}/{channel}.log` exists on the host.
 - The mounted file is readable by the container.

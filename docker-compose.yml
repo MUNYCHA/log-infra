@@ -79,10 +79,10 @@ services:
       - ${LOGSTREAM_LOG_DIR}:${LOGSTREAM_LOG_DIR}:ro
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
-      KAFKA_CONSUMER_GROUP_ID: ${KAFKA_CONSUMER_GROUP_ID:-log-dashboard}
-      KAFKA_MAX_POLL_RECORDS: ${KAFKA_MAX_POLL_RECORDS:-500}
-      LOGSTREAM_TOPICS: ${LOGSTREAM_TOPICS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      LOGSTREAM_CHANNELS: ${LOGSTREAM_CHANNELS}
       LOGSTREAM_ALLOWED_ORIGINS: ${APP_ORIGIN}
       LOGSTREAM_LOG_DIR: ${LOGSTREAM_LOG_DIR}
       LOGSTREAM_MAX_SESSIONS_PER_USER: ${LOGSTREAM_MAX_SESSIONS_PER_USER:-5}
@@ -97,7 +97,7 @@ services:
       resources:
         limits:
           # Keep ~512m above JVM_MAX_HEAP: metaspace, thread stacks, and
-          # Kafka/WebSocket off-heap buffers live outside the heap.
+          # Redis/WebSocket off-heap buffers live outside the heap.
           memory: 1g
           cpus: "2.0"
         reservations:
@@ -121,7 +121,7 @@ services:
         # WS/SSO URLs default to same-origin at runtime (see UI src/config.js);
         # leave VITE_WS_URL / VITE_SSO_LOGIN_URL blank for the standard proxied deploy.
         VITE_WS_URL: ""
-        VITE_MAX_LOGS_PER_TOPIC: ${VITE_MAX_LOGS_PER_TOPIC:-500}
+        VITE_MAX_LOGS_PER_CHANNEL: ${VITE_MAX_LOGS_PER_CHANNEL:-500}
         VITE_MAX_MESSAGE_LENGTH: ${VITE_MAX_MESSAGE_LENGTH:-50000}
         VITE_SSO_LOGIN_URL: ""
         VITE_SSO_CLIENT_ID: ${VITE_SSO_CLIENT_ID}
